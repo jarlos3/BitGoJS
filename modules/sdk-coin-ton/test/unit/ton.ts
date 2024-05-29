@@ -254,7 +254,7 @@ describe('TON:', function () {
     });
 
     it('should return true for isWalletAddress with valid address for index 4', async function () {
-      const newAddress = 'EQB0Hyt1bTRfI0WK_ULZyKvrvP0PPtpTQFi_jKXVXX6KFL7n';
+      const newAddress = 'UQB0Hyt1bTRfI0WK_ULZyKvrvP0PPtpTQFi_jKXVXX6KFOMi';
       const index = 4;
 
       const params = { commonKeychain, address: newAddress, index, keychains };
@@ -262,7 +262,7 @@ describe('TON:', function () {
     });
 
     it('should return false for isWalletAddress with valid address for index 5 and address is for a different index', async function () {
-      const wrongAddressForIndex5 = 'EQB0Hyt1bTRfI0WK_ULZyKvrvP0PPtpTQFi_jKXVXX6KFL7n';
+      const wrongAddressForIndex5 = 'UQB0Hyt1bTRfI0WK_ULZyKvrvP0PPtpTQFi_jKXVXX6KFOMi';
       const index = 5;
 
       const params = { commonKeychain, address: wrongAddressForIndex5, index, keychains };
@@ -270,7 +270,7 @@ describe('TON:', function () {
     });
 
     it('should throw error for isWalletAddress when keychains is missing', async function () {
-      const address = 'EQB0Hyt1bTRfI0WK_ULZyKvrvP0PPtpTQFi_jKXVXX6KFL7n';
+      const address = 'UQB0Hyt1bTRfI0WK_ULZyKvrvP0PPtpTQFi_jKXVXX6KFOMi';
       const index = 0;
 
       const params = { commonKeychain, address, index };
