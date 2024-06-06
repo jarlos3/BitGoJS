@@ -34,5 +34,9 @@ export function getUtxoCoinScriptTypesForWalletType(
   const scriptTypes = getUtxoCoinScriptTypes2Of3(coinName);
 
   // Only return true for p2trMusig2 if the wallet type is hot
-  return scriptTypes.filter((scriptType) => (scriptType === 'p2trMusig2' ? walletType === 'hot' : true));
+  return scriptTypes.filter((scriptType) =>
+    scriptType === 'p2trMusig2'
+      ? walletType === 'hot' || (walletType === 'cold' && utxolib.isTestnet(coins.get(coinName).network))
+      : true
+  );
 }
