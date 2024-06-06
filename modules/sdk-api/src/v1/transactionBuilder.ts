@@ -61,6 +61,7 @@ interface BitGoUnspent {
 //   feeSingleKeySourceAddress: Use this single key address to pay fees
 //   feeSingleKeyWIF: Use the address based on this private key to pay fees
 //   unspentsFetchParams: Extra parameters to use for fetching unspents for this transaction
+//   unspents: array of unspent objects to use while constructing the transaction instead of fetching from the API
 exports.createTransaction = function (params) {
   const minConfirms = params.minConfirms || 0;
   const validate = params.validate === undefined ? true : params.validate;
@@ -404,6 +405,7 @@ exports.createTransaction = function (params) {
   // input amount and final list of inputs to use with the transaction.
   let feeSingleKeyUnspentsUsed: BitGoUnspent[] = [];
 
+  // Note: This function is recursive!
   const collectInputs = function () {
     if (!unspents.length) {
       throw new Error('no unspents available on wallet');
@@ -528,6 +530,7 @@ exports.createTransaction = function (params) {
           nOutputs: txInfo.nOutputs,
         });
 
+        // `shouldComputeBestFee` is true if `fee` in params is undefined
         if (shouldComputeBestFee) {
           const approximateFee = minerFeeInfo.fee;
           const shouldRecurse = _.isUndefined(fee) || approximateFee > fee;
@@ -650,6 +653,8 @@ exports.createTransaction = function (params) {
         }
       }
 
+      // TODO: Constructing a sweep should satisfy this condition because the change amount is 0
+      // TODO: minOutputSize = 2730
       if (changeAmount < constants.minOutputSize) {
         // Give it to the miners
         return result;
@@ -702,6 +707,18 @@ exports.createTransaction = function (params) {
 
     // Add change output(s) and instant fee output if applicable
     return Bluebird.try(function () {
+      /**
+       * TODO: The caller of `createTransaction` would have to ensure that here `changeAmount` is close to 0
+       * The caller knows all the unspents that need to be used in the transaction, it would also need to estimate
+       * the size of the new transaction and the fee required to pay for it. The caller would then need to ensure
+       * that the changeAmount is close to 0, so that the no change amount ends up get being created.
+       *
+       * The caller can call `calculateMinerFeeInfo` function by passing an estimate of kind of the transaction
+       * inputs in the transaction and the number of outputs in the transaction.
+       *
+       * The caller also needs to ensure that the count of inputs is less than equal to 200, which doesn't really
+       * make this a sweep per se.
+       * */
       return getChangeOutputs(inputAmount - totalAmount);
     }).then(function (result) {
       changeOutputs = result;
