@@ -339,11 +339,13 @@ export async function backupKeyRecovery(
   utxolib.bitgo.addXpubsToPsbt(psbt, walletKeys);
   const txInfo = {} as BackupKeyRecoveryTransansaction;
 
+  // TODO: Reuse this, need not use BitGo fee estimate API
   const feePerByte: number = await getRecoveryFeePerBytes(coin, { defaultValue: 100 });
 
   // KRS recovery transactions have a 2nd output to pay the recovery fee, like paygo fees. Use p2wsh outputs because
   // they are the largest outputs and thus the most conservative estimate to use in calculating fees. Also use
   // segwit overhead size and p2sh inputs for the same reason.
+  // TODO: Use the below 3 lines to get approximate fee for the transaction
   const outputSize = (isKrsRecovery ? 2 : 1) * VirtualSizes.txP2wshOutputSize;
   const approximateSize = VirtualSizes.txSegOverheadVSize + outputSize + VirtualSizes.txP2shInputSize * unspents.length;
   const approximateFee = BigInt(approximateSize * feePerByte);
@@ -367,6 +369,7 @@ export async function backupKeyRecovery(
     }
   }
 
+  // TODO: Reuse this recovery amount calculation, no KRS recovery case
   const recoveryAmount = totalInputAmount - approximateFee - krsFee;
 
   if (recoveryAmount < BigInt(0)) {

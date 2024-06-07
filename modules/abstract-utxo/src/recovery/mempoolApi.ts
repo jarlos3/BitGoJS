@@ -29,4 +29,6 @@ export class MempoolApi extends BaseApi {
       throw new Error('unexpected response');
     });
   }
+
+  // TODO: Add a broadcast transaction function
 }
