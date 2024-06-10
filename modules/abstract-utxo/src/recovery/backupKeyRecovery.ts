@@ -226,7 +226,7 @@ async function queryBlockchainUnspentsPath(
   return walletUnspents;
 }
 
-async function getRecoveryFeePerBytes(
+export async function getRecoveryFeePerBytes(
   coin: AbstractUtxoCoin,
   { defaultValue }: { defaultValue: number }
 ): Promise<number> {
