@@ -18,7 +18,14 @@ const TransactionBuilder = require('./transactionBuilder');
 import * as utxolib from '@bitgo/utxo-lib';
 const PendingApproval = require('./pendingapproval');
 
-import { common, getNetwork, getSharedSecret, makeRandomKey, sanitizeLegacyPath } from '@bitgo/sdk-core';
+import {
+  common,
+  ErrorNoInputToRecover,
+  getNetwork,
+  getSharedSecret,
+  makeRandomKey,
+  sanitizeLegacyPath,
+} from '@bitgo/sdk-core';
 import * as Bluebird from 'bluebird';
 const co = Bluebird.coroutine;
 import * as _ from 'lodash';
@@ -2420,6 +2427,55 @@ Wallet.prototype.getBitGoFee = function (params, callback) {
     throw new Error('invalid instant argument');
   }
   return Bluebird.resolve(this.bitgo.get(this.url('/billing/fee')).query(params).result()).nodeify(callback);
+};
+
+/*
+ * Usage: v1wallet.recover({ walletPassphrase, unspents, recoveryDestination, recoveryFeePerByte })
+ * */
+Wallet.prototype.recover = function (params, callback) {
+  if (_.isUndefined(params.walletPassphrase)) {
+    throw new Error('missing walletPassphrase');
+  }
+  if (_.isUndefined(params.unspents)) {
+    throw new Error('missing unspents');
+  }
+  if (_.isUndefined(params.recoveryDestination)) {
+    throw new Error('invalid recoveryDestination');
+  }
+  if (_.isUndefined(params.recoveryFeePerByte)) {
+    throw new Error('invalid recoveryFeePerByte');
+  }
+
+  const totalInputAmount: bigint = utxolib.bitgo.unspentSum(params.unspents, 'bigint');
+  if (totalInputAmount <= BigInt(0)) {
+    throw new ErrorNoInputToRecover();
+  }
+
+  const outputSize = VirtualSizes.txP2wshOutputSize;
+  const approximateSize =
+    VirtualSizes.txSegOverheadVSize + outputSize + VirtualSizes.txP2shInputSize * params.unspents.length;
+  const approximateTxFee = BigInt(approximateSize * params.recoveryFeePerByte);
+  const recoveryAmount = totalInputAmount - approximateTxFee;
+  const recipients = [{ address: params.recoveryDestination, amount: recoveryAmount }];
+
+  // const self = this;
+  const retPromise = this.createAndSignTransaction({
+    ...params,
+    recipients,
+    fee: approximateTxFee,
+  }).then(function (halfSignedTx) {
+    // TODO: Ensure there is no change output
+    console.log('Half signed tx:', halfSignedTx);
+
+    // Send the transaction
+    // return self.sendTransaction({
+    //   tx: halfSignedTx.tx,
+    //   otp: params.otp,
+    //   suppressBroadcast: true, // don't actually broadcast the tx to the full node
+    // });
+  });
+
+  return Bluebird.resolve(retPromise).nodeify(callback);
 };
 
 export = Wallet;
